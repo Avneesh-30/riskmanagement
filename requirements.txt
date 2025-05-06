@@ -3,5 +3,4 @@ pandas
 numpy
 matplotlib
 yfinance
-openpyxl
 pyfolio
