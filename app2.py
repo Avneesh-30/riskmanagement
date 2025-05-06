@@ -4,7 +4,6 @@ import yfinance as yf
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
-import pyfolio as pf
 
 # --- Broker converters ---
 
@@ -342,48 +341,6 @@ def marginal_var(holdings_daily, prices_df, portfolio_returns, confidence_level=
         marginals_series[:] = 0.0
     return marginals_series
 
-# ------------ Round-Trip Returns -------------------
-
-def compute_round_trip_returns(trades_df):
-    pnl_list = []
-    for symbol in trades_df['Symbol'].unique():
-        fifo_queue = []
-        trades_sym = trades_df[trades_df['Symbol'] == symbol].sort_values('TradeDate')
-        for _, row in trades_sym.iterrows():
-            qty = row['Quantity']
-            price = row['Price']
-            trade_date = pd.to_datetime(row['TradeDate'])
-            side = row['BuySell'].lower()
-            if side == 'buy':
-                fifo_queue.append({'qty': qty, 'price': price, 'date': trade_date})
-            else:  # sell
-                sell_qty = qty
-                sell_price = price
-                sell_date = trade_date
-                while sell_qty > 0 and fifo_queue:
-                    lot = fifo_queue[0]
-                    lot_qty = lot['qty']
-                    lot_price = lot['price']
-                    qty_used = min(lot_qty, sell_qty)
-                    pnl = (sell_price - lot_price) * qty_used
-                    pnl_list.append((sell_date, pnl))
-                    if qty_used == lot_qty:
-                        fifo_queue.pop(0)
-                    else:
-                        fifo_queue[0]['qty'] -= qty_used
-                    sell_qty -= qty_used
-                if sell_qty > 0:
-                    pnl = sell_price * sell_qty
-                    pnl_list.append((sell_date, pnl))
-    pnl_df = pd.DataFrame(pnl_list, columns=['Date', 'PnL'])
-    pnl_df = pnl_df.groupby('Date').sum().sort_index()
-    total_abs_pnl = pnl_df['PnL'].abs().sum()
-    if total_abs_pnl == 0:
-        returns_series = pd.Series(dtype=float)
-    else:
-        returns_series = pnl_df['PnL'] / total_abs_pnl
-    returns_series.name = 'round_trip_returns'
-    return returns_series
 
 # ------------ Main Function ------------------------
 
@@ -471,22 +428,6 @@ def main():
                 sector_allocation(holdings_daily, prices_df)
                 show_trade_history(trades_df)
                 show_pnl_curve(portfolio_value)
-
-            elif section == "Round Trip Tear Sheet":
-                st.write("Round Trip Trade Returns Tear Sheet")
-                round_trip_returns = compute_round_trip_returns(trades_df)
-                if round_trip_returns.empty:
-                    st.warning("Not enough data for round trip analysis.")
-                else:
-                    try:
-                        # IMPORTANT: Remove show=False if your pyfolio version doesn't support it
-                        pf.create_round_trip_tear_sheet(round_trip_returns, set_context=False)
-                        figs = [plt.figure(num) for num in plt.get_fignums()]
-                        for fig in figs:
-                            st.pyplot(fig)
-                            plt.close(fig)
-                    except Exception as e:
-                        st.error(f"Failed to generate round trip tear sheet: {e}")
                         
         except Exception as ex:
             st.error(f"An error occurred: {ex}")
