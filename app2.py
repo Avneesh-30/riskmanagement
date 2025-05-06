@@ -375,8 +375,7 @@ def main():
             section = st.sidebar.selectbox("Select Analysis Section", [
                 "Basic Analytics",
                 "Advanced Analytics",
-                "Other Analytics",
-                "Round Trip Tear Sheet"
+                "Other Analytics"
             ])
 
             st.write("### Portfolio Value Over Time")
@@ -425,7 +424,6 @@ def main():
                 st.bar_chart(marginal_series.sort_values(ascending=False))
 
             elif section == "Other Analytics":
-                st.subheader("Sector Allocation")
                 sector_allocation(holdings_daily, prices_df)
                 show_trade_history(trades_df)
                 show_pnl_curve(portfolio_value)
