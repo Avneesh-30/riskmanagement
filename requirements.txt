@@ -3,4 +3,3 @@ pandas
 numpy
 matplotlib
 yfinance
-pyfolio==0.9.2
