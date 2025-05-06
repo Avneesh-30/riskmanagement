@@ -247,6 +247,8 @@ def sector_allocation(holdings_daily, prices_df):
         st.warning("No sector allocation data available.")
     else:
         st.pyplot(sector_alloc.plot.pie(autopct="%1.1f%%", figsize=(6, 6)).figure)
+    st.write("### Sector Allocation Table")
+    st.dataframe(sector_dist.sort_values(ascending=False).to_frame("Market Value"))
 
 # -------------- Trade History ---------------------
 
